@@ -202,7 +202,7 @@
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=5000, debug=True)
 
-ffrom flask import Flask, request, jsonify, send_file, render_template_string
+from flask import Flask, request, jsonify, send_file, render_template_string
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
 import hashlib
