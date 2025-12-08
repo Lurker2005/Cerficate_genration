@@ -224,7 +224,7 @@ BG_PATH = "certificate_bg.jpg"
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 # ✅ LIVE DOMAIN
-BASE_URL = "https://cerficate.bharatwipe.online"
+BASE_URL = "http://cerficate.bharatwipe.online"
 
 # =========================
 # ✅ FOLDERS
