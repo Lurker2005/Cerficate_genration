@@ -40,5 +40,11 @@
         "username": "caleb royce",
         "timestamp": "08-12-2025 01:29:52",
         "hash": "c8b98fccddf0d0749be4e14da68f8f2066e63505043df70ffadddb7444c37f1e"
+    },
+    "57655509-bc35-4c7e-a543-b8692a7095be": {
+        "device_name": "Test Disk",
+        "username": "linux",
+        "timestamp": "09-12-2025 01:29:18",
+        "hash": "78a795758ce72ba029d81e943191414aa3d728f4cd62fd206d9fe3a778a0a09a"
     }
 }

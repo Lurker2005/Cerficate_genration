@@ -1,4 +1,3 @@
-
 # from flask import Flask, request, jsonify, send_file, render_template_string
 # from PIL import Image, ImageDraw, ImageFont
 # import qrcode
@@ -11,13 +10,21 @@
 
 # app = Flask(__name__)
 
+# # =========================
+# # ✅ PATH CONFIG
+# # =========================
 # DB_PATH = "database.json"
 # BG_PATH = "certificate_bg.jpg"
-# FONT_PATH = "arial.ttf"
 
-# # ✅ YOUR CURRENT NGROK URL (UPDATE IF NGROK CHANGES)
-# NGROK_URL = "https://postdevelopmental-gertrudis-pindling.ngrok-free.dev"
+# # ✅ LINUX SAFE FONT (FIXED)
+# FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
+# # ✅ LIVE DOMAIN
+# BASE_URL = "http://cerficate.bharatwipe.online"
+
+# # =========================
+# # ✅ FOLDERS
+# # =========================
 # os.makedirs("certificates", exist_ok=True)
 
 # # =========================
@@ -40,37 +47,34 @@
 # # =========================
 # def generate_certificate(device_name, username):
 #     timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-
-#     # Unique Certificate ID
 #     cert_id = str(uuid.uuid4())
 
-#     # Create hash
 #     raw_data = f"{device_name}|{username}|{timestamp}|{cert_id}"
 #     hash_id = hashlib.sha256(raw_data.encode()).hexdigest()
 
-#     # ✅ QR WITH NGROK LINK
-#     qr_data = f"{NGROK_URL}/verify/{cert_id}"
+#     qr_data = f"{BASE_URL}/verify/{cert_id}"
 #     qr = qrcode.make(qr_data).resize((230, 230))
 
-#     # Load certificate background
 #     bg = Image.open(BG_PATH).convert("RGBA")
 #     draw = ImageDraw.Draw(bg)
 
-#     # Fonts
-#     title_font = ImageFont.truetype(FONT_PATH, 52)
-#     label_font = ImageFont.truetype(FONT_PATH, 28)
-#     value_font = ImageFont.truetype(FONT_PATH, 28)
+#     # ✅ SAFE FONT LOADER
+#     try:
+#         title_font = ImageFont.truetype(FONT_PATH, 52)
+#         label_font = ImageFont.truetype(FONT_PATH, 28)
+#         value_font = ImageFont.truetype(FONT_PATH, 28)
+#     except:
+#         print("⚠️ FONT FAILED — using default")
+#         title_font = ImageFont.load_default()
+#         label_font = ImageFont.load_default()
+#         value_font = ImageFont.load_default()
 
-#     # =========================
-#     # ✅ CENTER TITLE
-#     # =========================
+#     # ✅ TITLE
 #     title_text = "CERTIFICATE"
 #     w, h = draw.textbbox((0, 0), title_text, font=title_font)[2:]
 #     draw.text(((bg.width - w) / 2, 350), title_text, fill="black", font=title_font)
 
-#     # =========================
-#     # ✅ LEFT ALIGNED DATA
-#     # =========================
+#     # ✅ DATA BLOCK
 #     start_x = 160
 #     start_y = 460
 #     gap = 50
@@ -85,39 +89,27 @@
 #     draw.text((start_x + 230, start_y + gap * 2), timestamp, fill="black", font=value_font)
 
 #     draw.text((start_x, start_y + gap * 3), "Hash:", fill="black", font=label_font)
-
 #     wrapped_hash = textwrap.fill(hash_id, width=42)
-#     draw.text((start_x + 230, start_y + gap * 3),
-#               wrapped_hash, fill="black", font=value_font)
+#     draw.text((start_x + 230, start_y + gap * 3), wrapped_hash, fill="black", font=value_font)
 
-#     # =========================
-#     # ✅ STATUS + DATE
-#     # =========================
 #     draw.text((start_x, start_y + gap * 6), "Status:", fill="black", font=label_font)
-#     draw.text((start_x + 230, start_y + gap * 6), "Verified",
-#               fill="green", font=value_font)
+#     draw.text((start_x + 230, start_y + gap * 6), "Verified", fill="green", font=value_font)
 
 #     draw.text((start_x, start_y + gap * 7), "Date:", fill="black", font=label_font)
 #     draw.text((start_x + 230, start_y + gap * 7),
 #               datetime.now().strftime("%d %b %Y"),
 #               fill="black", font=value_font)
 
-#     # =========================
-#     # ✅ PASTE QR (BOTTOM RIGHT)
-#     # =========================
+#     # ✅ QR
 #     qr_x = bg.width - 300
 #     qr_y = bg.height - 300
 #     bg.paste(qr, (qr_x, qr_y))
 
-#     # =========================
-#     # ✅ SAVE CERTIFICATE
-#     # =========================
+#     # ✅ SAVE IMAGE
 #     output_path = f"certificates/{cert_id}.png"
 #     bg.save(output_path)
 
-#     # =========================
-#     # ✅ SAVE TO DATABASE
-#     # =========================
+#     # ✅ SAVE DATABASE
 #     db = load_db()
 #     db[cert_id] = {
 #         "device_name": device_name,
@@ -146,7 +138,7 @@
 #     })
 
 # # =========================
-# # ✅ BEAUTIFUL VERIFY PAGE
+# # ✅ VERIFY PAGE
 # # =========================
 # @app.route("/verify/<cert_id>")
 # def verify(cert_id):
@@ -165,42 +157,27 @@
 #     cert_img = f"/certificate/{cert_id}"
 
 #     return render_template_string(f"""
-#     <html>
-#     <head>
-#         <title>Certificate Verification</title>
-#         <style>
-#             body {{ font-family: Arial; background: #f4f6f8; text-align: center; }}
-#             .box {{ background: white; padding: 30px; width: 85%; margin: auto; margin-top: 40px; border-radius: 12px; box-shadow: 0 0 10px #aaa; }}
-#             h1 {{ color: green; }}
-#             img {{ margin-top: 20px; width: 90%; max-width: 800px; border: 2px solid #ccc; border-radius: 10px; }}
-#         </style>
-#     </head>
-#     <body>
-#         <div class="box">
-#             <h1>✅ CERTIFICATE VERIFIED</h1>
-#             <p><b>Device:</b> {data["device_name"]}</p>
-#             <p><b>User:</b> {data["username"]}</p>
-#             <p><b>Timestamp:</b> {data["timestamp"]}</p>
-#             <p><b>Status:</b> AUTHENTIC ✅</p>
-
-#             <img src="{cert_img}">
-#         </div>
-#     </body>
-#     </html>
+#     <html><body style="font-family:Arial;text-align:center;">
+#     <h1 style="color:green;">✅ CERTIFICATE VERIFIED</h1>
+#     <p><b>Device:</b> {data["device_name"]}</p>
+#     <p><b>User:</b> {data["username"]}</p>
+#     <p><b>Timestamp:</b> {data["timestamp"]}</p>
+#     <img src="{cert_img}" width="80%">
+#     </body></html>
 #     """)
 
 # # =========================
-# # ✅ API: DOWNLOAD IMAGE
+# # ✅ IMAGE DOWNLOAD
 # # =========================
 # @app.route("/certificate/<cert_id>")
 # def get_certificate_file(cert_id):
 #     return send_file(f"certificates/{cert_id}.png")
 
 # # =========================
-# # ✅ RUN APP (PUBLIC ACCESS ENABLED)
+# # ✅ RUN
 # # =========================
 # if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000, debug=True)
+#     app.run(host="0.0.0.0", port=5001, debug=False)
 
 from flask import Flask, request, jsonify, send_file, render_template_string
 from PIL import Image, ImageDraw, ImageFont
@@ -211,29 +188,19 @@ import json
 from datetime import datetime
 import os
 import textwrap
+import cv2
+from pyzbar.pyzbar import decode
 
 app = Flask(__name__)
 
-# =========================
-# ✅ PATH CONFIG
-# =========================
 DB_PATH = "database.json"
 BG_PATH = "certificate_bg.jpg"
-
-# ✅ LINUX SAFE FONT (FIXED)
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-
-# ✅ LIVE DOMAIN
 BASE_URL = "http://cerficate.bharatwipe.online"
 
-# =========================
-# ✅ FOLDERS
-# =========================
 os.makedirs("certificates", exist_ok=True)
+os.makedirs("uploads", exist_ok=True)
 
-# =========================
-# ✅ CREATE EMPTY DB
-# =========================
 if not os.path.exists(DB_PATH):
     with open(DB_PATH, "w") as f:
         json.dump({}, f)
@@ -262,58 +229,39 @@ def generate_certificate(device_name, username):
     bg = Image.open(BG_PATH).convert("RGBA")
     draw = ImageDraw.Draw(bg)
 
-    # ✅ SAFE FONT LOADER
     try:
         title_font = ImageFont.truetype(FONT_PATH, 52)
         label_font = ImageFont.truetype(FONT_PATH, 28)
         value_font = ImageFont.truetype(FONT_PATH, 28)
     except:
-        print("⚠️ FONT FAILED — using default")
         title_font = ImageFont.load_default()
         label_font = ImageFont.load_default()
         value_font = ImageFont.load_default()
 
-    # ✅ TITLE
-    title_text = "CERTIFICATE"
-    w, h = draw.textbbox((0, 0), title_text, font=title_font)[2:]
-    draw.text(((bg.width - w) / 2, 350), title_text, fill="black", font=title_font)
+    draw.text((400, 350), "CERTIFICATE", fill="black", font=title_font)
 
-    # ✅ DATA BLOCK
-    start_x = 160
-    start_y = 460
-    gap = 50
+    draw.text((160, 460), "Device Name:", fill="black", font=label_font)
+    draw.text((390, 460), device_name, fill="black", font=value_font)
 
-    draw.text((start_x, start_y), "Device Name:", fill="black", font=label_font)
-    draw.text((start_x + 230, start_y), device_name, fill="black", font=value_font)
+    draw.text((160, 510), "Username:", fill="black", font=label_font)
+    draw.text((390, 510), username, fill="black", font=value_font)
 
-    draw.text((start_x, start_y + gap), "Username:", fill="black", font=label_font)
-    draw.text((start_x + 230, start_y + gap), username, fill="black", font=value_font)
+    draw.text((160, 560), "Timestamp:", fill="black", font=label_font)
+    draw.text((390, 560), timestamp, fill="black", font=value_font)
 
-    draw.text((start_x, start_y + gap * 2), "Timestamp:", fill="black", font=label_font)
-    draw.text((start_x + 230, start_y + gap * 2), timestamp, fill="black", font=value_font)
+    draw.text((160, 610), "Hash:", fill="black", font=label_font)
+    draw.text((390, 610), textwrap.fill(hash_id, width=42), fill="black", font=value_font)
 
-    draw.text((start_x, start_y + gap * 3), "Hash:", fill="black", font=label_font)
-    wrapped_hash = textwrap.fill(hash_id, width=42)
-    draw.text((start_x + 230, start_y + gap * 3), wrapped_hash, fill="black", font=value_font)
+    draw.text((160, 760), "Status:", fill="black", font=label_font)
+    draw.text((390, 760), "Verified", fill="green", font=value_font)
 
-    draw.text((start_x, start_y + gap * 6), "Status:", fill="black", font=label_font)
-    draw.text((start_x + 230, start_y + gap * 6), "Verified", fill="green", font=value_font)
-
-    draw.text((start_x, start_y + gap * 7), "Date:", fill="black", font=label_font)
-    draw.text((start_x + 230, start_y + gap * 7),
-              datetime.now().strftime("%d %b %Y"),
-              fill="black", font=value_font)
-
-    # ✅ QR
     qr_x = bg.width - 300
     qr_y = bg.height - 300
     bg.paste(qr, (qr_x, qr_y))
 
-    # ✅ SAVE IMAGE
     output_path = f"certificates/{cert_id}.png"
     bg.save(output_path)
 
-    # ✅ SAVE DATABASE
     db = load_db()
     db[cert_id] = {
         "device_name": device_name,
@@ -326,49 +274,80 @@ def generate_certificate(device_name, username):
     return cert_id, output_path
 
 # =========================
-# ✅ API: GENERATE CERTIFICATE
+# ✅ GENERATE API
 # =========================
 @app.route("/generate", methods=["POST"])
 def generate_api():
     data = request.json
-    device = data["device"]
-    user = data["username"]
-
-    cert_id, path = generate_certificate(device, user)
-
-    return jsonify({
-        "certificate_id": cert_id,
-        "certificate_image": path
-    })
+    cert_id, path = generate_certificate(data["device"], data["username"])
+    return jsonify({"certificate_id": cert_id, "certificate_image": path})
 
 # =========================
-# ✅ VERIFY PAGE
+# ✅ QR VERIFY (WEB)
 # =========================
 @app.route("/verify/<cert_id>")
 def verify(cert_id):
     db = load_db()
-
     if cert_id not in db:
-        return "<h1 style='color:red;text-align:center;'>❌ Certificate Not Found</h1>"
+        return "<h1 style='color:red;'>❌ Certificate Not Found</h1>"
 
     data = db[cert_id]
     raw = f"{data['device_name']}|{data['username']}|{data['timestamp']}|{cert_id}"
     verify_hash = hashlib.sha256(raw.encode()).hexdigest()
 
     if verify_hash != data["hash"]:
-        return "<h1 style='color:red;text-align:center;'>❌ Certificate Tampered</h1>"
+        return "<h1 style='color:red;'>❌ Certificate Tampered</h1>"
 
-    cert_img = f"/certificate/{cert_id}"
+    return render_template_string(
+        f"<h1 style='color:green;'>✅ CERTIFICATE VERIFIED</h1><img src='/certificate/{cert_id}' width='70%'>"
+    )
 
-    return render_template_string(f"""
-    <html><body style="font-family:Arial;text-align:center;">
-    <h1 style="color:green;">✅ CERTIFICATE VERIFIED</h1>
-    <p><b>Device:</b> {data["device_name"]}</p>
-    <p><b>User:</b> {data["username"]}</p>
-    <p><b>Timestamp:</b> {data["timestamp"]}</p>
-    <img src="{cert_img}" width="80%">
-    </body></html>
-    """)
+# =========================
+# ✅ ✅ ✅ PNG + QR UPLOAD VERIFY API ✅ ✅ ✅
+# =========================
+@app.route("/verify/image", methods=["POST"])
+def verify_image():
+    file = request.files.get("file")
+
+    if not file:
+        return jsonify({"valid": False, "reason": "No image uploaded"}), 400
+
+    path = os.path.join("uploads", file.filename)
+    file.save(path)
+
+    img = cv2.imread(path)
+    decoded = decode(img)
+
+    if not decoded:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "QR not detected"}), 400
+
+    qr_data = decoded[0].data.decode("utf-8")
+    cert_id = qr_data.split("/")[-1]
+
+    db = load_db()
+    if cert_id not in db:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "Certificate not found"}), 404
+
+    data = db[cert_id]
+    raw = f"{data['device_name']}|{data['username']}|{data['timestamp']}|{cert_id}"
+    verify_hash = hashlib.sha256(raw.encode()).hexdigest()
+
+    if verify_hash != data["hash"]:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "Certificate tampered"}), 400
+
+    os.remove(path)
+
+    return jsonify({
+        "valid": True,
+        "certificate_id": cert_id,
+        "device_name": data["device_name"],
+        "username": data["username"],
+        "timestamp": data["timestamp"],
+        "message": "✅ Certificate Verified Successfully"
+    })
 
 # =========================
 # ✅ IMAGE DOWNLOAD
@@ -382,3 +361,4 @@ def get_certificate_file(cert_id):
 # =========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=False)
+
