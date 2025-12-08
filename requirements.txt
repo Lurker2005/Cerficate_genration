@@ -3,3 +3,4 @@ Pillow==9.5.0
 qrcode==7.4.2
 opencv-python
 pyzbar
+mysql-connector-python
