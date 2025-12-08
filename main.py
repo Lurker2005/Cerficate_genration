@@ -202,7 +202,7 @@
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=5000, debug=True)
 
-from flask import Flask, request, jsonify, send_file, render_template_string
+ffrom flask import Flask, request, jsonify, send_file, render_template_string
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
 import hashlib
@@ -219,10 +219,9 @@ app = Flask(__name__)
 # =========================
 DB_PATH = "database.json"
 BG_PATH = "certificate_bg.jpg"
-FONT_PATH = "arial.ttf"
 
-# ✅ LIVE DOMAIN (YOUR SUBDOMAIN)
-BASE_URL = "https://cerficate.bharatwipe.online"
+# ✅ LIVE DOMAIN
+BASE_URL = "http://cerficate.bharatwipe.online"
 
 # =========================
 # ✅ FOLDERS
@@ -254,23 +253,23 @@ def generate_certificate(device_name, username):
     raw_data = f"{device_name}|{username}|{timestamp}|{cert_id}"
     hash_id = hashlib.sha256(raw_data.encode()).hexdigest()
 
-    # ✅ LIVE QR VERIFICATION LINK
+    # ✅ QR VERIFICATION LINK
     qr_data = f"{BASE_URL}/verify/{cert_id}"
     qr = qrcode.make(qr_data).resize((230, 230))
 
     bg = Image.open(BG_PATH).convert("RGBA")
     draw = ImageDraw.Draw(bg)
 
-    title_font = ImageFont.truetype(FONT_PATH, 52)
-    label_font = ImageFont.truetype(FONT_PATH, 28)
-    value_font = ImageFont.truetype(FONT_PATH, 28)
+    # ✅ SAFE FONT (NO CRASH)
+    title_font = ImageFont.load_default()
+    label_font = ImageFont.load_default()
+    value_font = ImageFont.load_default()
 
     # ✅ TITLE
     title_text = "CERTIFICATE"
     w, h = draw.textbbox((0, 0), title_text, font=title_font)[2:]
     draw.text(((bg.width - w) / 2, 350), title_text, fill="black", font=title_font)
 
-    # ✅ LEFT DATA
     start_x = 160
     start_y = 460
     gap = 50
@@ -288,25 +287,24 @@ def generate_certificate(device_name, username):
     wrapped_hash = textwrap.fill(hash_id, width=42)
     draw.text((start_x + 230, start_y + gap * 3), wrapped_hash, fill="black", font=value_font)
 
-    # ✅ STATUS & DATE
     draw.text((start_x, start_y + gap * 6), "Status:", fill="black", font=label_font)
     draw.text((start_x + 230, start_y + gap * 6), "Verified", fill="green", font=value_font)
 
     draw.text((start_x, start_y + gap * 7), "Date:", fill="black", font=label_font)
-    draw.text((start_x + 230, start_y + gap * 7),
-              datetime.now().strftime("%d %b %Y"),
-              fill="black", font=value_font)
+    draw.text(
+        (start_x + 230, start_y + gap * 7),
+        datetime.now().strftime("%d %b %Y"),
+        fill="black",
+        font=value_font
+    )
 
-    # ✅ PASTE QR
     qr_x = bg.width - 300
     qr_y = bg.height - 300
     bg.paste(qr, (qr_x, qr_y))
 
-    # ✅ SAVE IMAGE
     output_path = f"certificates/{cert_id}.png"
     bg.save(output_path)
 
-    # ✅ SAVE DATABASE
     db = load_db()
     db[cert_id] = {
         "device_name": device_name,
@@ -323,7 +321,11 @@ def generate_certificate(device_name, username):
 # =========================
 @app.route("/generate", methods=["POST"])
 def generate_api():
-    data = request.json
+    data = request.get_json(force=True)
+
+    if not data or "device" not in data or "username" not in data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
     device = data["device"]
     user = data["username"]
 
@@ -335,7 +337,7 @@ def generate_api():
     })
 
 # =========================
-# ✅ BEAUTIFUL VERIFICATION PAGE
+# ✅ VERIFY PAGE
 # =========================
 @app.route("/verify/<cert_id>")
 def verify(cert_id):
@@ -354,44 +356,15 @@ def verify(cert_id):
     cert_img = f"/certificate/{cert_id}"
 
     return render_template_string(f"""
-    <!DOCTYPE html>
     <html>
-    <head>
-        <title>Certificate Verified</title>
-        <style>
-            body {{
-                font-family: Arial;
-                background: #f4f6f8;
-                text-align: center;
-            }}
-            .box {{
-                background: white;
-                padding: 30px;
-                width: 85%;
-                margin: auto;
-                margin-top: 40px;
-                border-radius: 12px;
-                box-shadow: 0 0 10px #aaa;
-            }}
-            h1 {{ color: green; }}
-            img {{
-                margin-top: 20px;
-                width: 90%;
-                max-width: 800px;
-                border: 2px solid #ccc;
-                border-radius: 10px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="box">
-            <h1>✅ CERTIFICATE VERIFIED</h1>
+    <body style="font-family: Arial; background: #f4f6f8; text-align: center;">
+        <div style="background: white; padding: 30px; margin: 40px auto; width: 85%; border-radius: 12px;">
+            <h1 style="color: green;">✅ CERTIFICATE VERIFIED</h1>
             <p><b>Device:</b> {data["device_name"]}</p>
             <p><b>User:</b> {data["username"]}</p>
             <p><b>Timestamp:</b> {data["timestamp"]}</p>
             <p><b>Status:</b> AUTHENTIC ✅</p>
-
-            <img src="{cert_img}">
+            <img src="{cert_img}" style="margin-top:20px; width:90%; max-width:800px;">
         </div>
     </body>
     </html>
@@ -405,7 +378,7 @@ def get_certificate_file(cert_id):
     return send_file(f"certificates/{cert_id}.png")
 
 # =========================
-# ✅ PRODUCTION RUN
+# ✅ RUN
 # =========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=False)
