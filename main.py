@@ -373,11 +373,61 @@ def verify(cert_id):
 # -----------------------------------
 # PNG VERIFICATION API (Flutter)
 # -----------------------------------
+# @app.route("/verify/image", methods=["POST"])
+# def verify_image():
+#     file = request.files.get("file")
+#     if not file:
+#         return jsonify({"valid": False, "reason": "No image uploaded"}), 400
+
+#     path = os.path.join("uploads", file.filename)
+#     file.save(path)
+
+#     img = cv2.imread(path)
+#     decoded = decode(img)
+
+#     if not decoded:
+#         os.remove(path)
+#         return jsonify({"valid": False, "reason": "QR not detected"}), 400
+
+#     qr_data = decoded[0].data.decode("utf-8")
+#     cert_id = qr_data.split("/")[-1]
+
+#     db = load_db()
+
+#     if cert_id not in db:
+#         os.remove(path)
+#         return jsonify({"valid": False, "reason": "Certificate not found"}), 404
+
+#     data = db[cert_id]
+
+#     raw = f"{data['device_name']}|{data['username']}|{data['timestamp']}|{cert_id}"
+#     verify_hash = hashlib.sha256(raw.encode()).hexdigest()
+
+#     if verify_hash != data["hash"]:
+#         os.remove(path)
+#         return jsonify({"valid": False, "reason": "Certificate tampered"}), 400
+
+#     os.remove(path)
+
+#     # 🔥 INCREMENT USER VERIFICATION COUNT
+#     log_verification(data["username"], cert_id)
+
+#     return jsonify({
+#         "valid": True,
+#         "certificate_id": cert_id,
+#         "device_name": data["device_name"],
+#         "username": data["username"],
+#         "timestamp": data["timestamp"],
+#         "verified_count": get_verification_count(data["username"]),
+#         "message": "✅ Certificate Verified Successfully"
+#     })
 @app.route("/verify/image", methods=["POST"])
 def verify_image():
     file = request.files.get("file")
-    if not file:
-        return jsonify({"valid": False, "reason": "No image uploaded"}), 400
+    verifier_username = request.form.get("verifier_username")  # ✅ LOGIN USER
+
+    if not file or not verifier_username:
+        return jsonify({"valid": False, "reason": "Missing data"}), 400
 
     path = os.path.join("uploads", file.filename)
     file.save(path)
@@ -409,16 +459,16 @@ def verify_image():
 
     os.remove(path)
 
-    # 🔥 INCREMENT USER VERIFICATION COUNT
-    log_verification(data["username"], cert_id)
+    # ✅ NOW LOG USING LOGIN USER (NOT CERT OWNER)
+    log_verification(verifier_username, cert_id)
 
     return jsonify({
         "valid": True,
         "certificate_id": cert_id,
-        "device_name": data["device_name"],
-        "username": data["username"],
+        "certificate_owner": data["username"],
+        "verified_by": verifier_username,   # ✅ LOGIN USER
         "timestamp": data["timestamp"],
-        "verified_count": get_verification_count(data["username"]),
+        "verified_count": get_verification_count(verifier_username),
         "message": "✅ Certificate Verified Successfully"
     })
 
