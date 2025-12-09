@@ -341,34 +341,65 @@ def generate_api():
 # -----------------------------------
 # WEB VERIFY (for QR page)
 # -----------------------------------
-@app.route("/verify/<cert_id>")
-def verify(cert_id):
+@app.route("/verify/image", methods=["POST"])
+def verify_image():
+    os.makedirs("uploads", exist_ok=True)
+
+    file = request.files.get("file")
+    verifier_username = request.form.get("verifier_username")
+
+    if not file or not verifier_username:
+        return jsonify({"valid": False, "reason": "Missing data"}), 400
+
+    filename = f"{uuid.uuid4().hex}.jpg"
+    path = os.path.join("uploads", filename)
+    file.save(path)
+
+    img = cv2.imread(path)
+
+    if img is None:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "Invalid image file"}), 400
+
+    decoded = decode(img)
+
+    if not decoded:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "QR not detected"}), 400
+
+    qr_data = decoded[0].data.decode("utf-8")
+    cert_id = qr_data.split("/")[-1]
+
+    # ⭐ FIXED: Load certificate from JSON DB
     db = load_db()
+    data = db.get(cert_id)
 
-    if cert_id not in db:
-        return "<h1 style='color:red;'>❌ Certificate Not Found</h1>"
-
-    data = db[cert_id]
+    if not data:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "Certificate not found"}), 404
 
     raw = f"{data['device_name']}|{data['username']}|{data['timestamp']}|{cert_id}"
     verify_hash = hashlib.sha256(raw.encode()).hexdigest()
 
-    # CHECK HASH
     if verify_hash != data["hash"]:
-        return "<h1 style='color:red;'>❌ Certificate Tampered</h1>"
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "Certificate tampered"}), 400
 
-    # 🔥 INCREMENT USER COUNTER HERE ALSO
-    log_verification(data["username"], cert_id)
+    os.remove(path)
 
-    # SHOW USER COUNT IN WEB PAGE
-    count = get_verification_count(data["username"])
+    # Log verifier in MySQL
+    log_verification(verifier_username, cert_id)
 
-    return render_template_string(f"""
-        <h1 style='color:green;'>✅ CERTIFICATE VERIFIED</h1>
-        <p>User: {data['username']}</p>
-        <p>Total verifications: {count}</p>
-        <img src='/certificate/{cert_id}' width='70%'>
-    """)
+    return jsonify({
+        "valid": True,
+        "certificate_id": cert_id,
+        "certificate_owner": data["username"],
+        "verified_by": verifier_username,
+        "timestamp": data["timestamp"],
+        "verified_count": get_verification_count(verifier_username),
+        "message": "✅ Certificate Verified Successfully"
+    })
+
 
 # -----------------------------------
 # PNG VERIFICATION API (Flutter)
