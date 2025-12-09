@@ -579,7 +579,7 @@ def get_db():
         host="localhost",
         user="bw_user",
         password="StrongPassword123",
-        database="bharatwipe"
+        database="certificates"
     )
 
 # -----------------------------------
