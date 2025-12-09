@@ -242,7 +242,7 @@ def log_verification(username, certificate_id):
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO verification_logs (username, certificate_id)
+        INSERT INTO certificates.verified_logs (username, certificate_id)
         VALUES (%s, %s)
     """, (username, certificate_id))
 
@@ -257,7 +257,7 @@ def get_verification_count(username):
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT COUNT(*) FROM verification_logs WHERE username = %s", (username,))
+    cur.execute("SELECT COUNT(*) certificates.verified_logs WHERE username = %s", (username,))
     count = cur.fetchone()[0]
 
     cur.close()
