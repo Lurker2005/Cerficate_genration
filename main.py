@@ -423,16 +423,24 @@ def verify(cert_id):
 #     })
 @app.route("/verify/image", methods=["POST"])
 def verify_image():
+    os.makedirs("uploads", exist_ok=True)
+
     file = request.files.get("file")
-    verifier_username = request.form.get("verifier_username")  # ✅ LOGIN USER
+    verifier_username = request.form.get("verifier_username")
 
     if not file or not verifier_username:
         return jsonify({"valid": False, "reason": "Missing data"}), 400
 
-    path = os.path.join("uploads", file.filename)
+    filename = f"{uuid.uuid4().hex}.jpg"
+    path = os.path.join("uploads", filename)
     file.save(path)
 
     img = cv2.imread(path)
+
+    if img is None:
+        os.remove(path)
+        return jsonify({"valid": False, "reason": "Invalid image file"}), 400
+
     decoded = decode(img)
 
     if not decoded:
@@ -442,13 +450,11 @@ def verify_image():
     qr_data = decoded[0].data.decode("utf-8")
     cert_id = qr_data.split("/")[-1]
 
-    db = load_db()
+    data = get_certificate_from_db(cert_id)
 
-    if cert_id not in db:
+    if not data:
         os.remove(path)
         return jsonify({"valid": False, "reason": "Certificate not found"}), 404
-
-    data = db[cert_id]
 
     raw = f"{data['device_name']}|{data['username']}|{data['timestamp']}|{cert_id}"
     verify_hash = hashlib.sha256(raw.encode()).hexdigest()
@@ -459,14 +465,13 @@ def verify_image():
 
     os.remove(path)
 
-    # ✅ NOW LOG USING LOGIN USER (NOT CERT OWNER)
     log_verification(verifier_username, cert_id)
 
     return jsonify({
         "valid": True,
         "certificate_id": cert_id,
         "certificate_owner": data["username"],
-        "verified_by": verifier_username,   # ✅ LOGIN USER
+        "verified_by": verifier_username,
         "timestamp": data["timestamp"],
         "verified_count": get_verification_count(verifier_username),
         "message": "✅ Certificate Verified Successfully"
