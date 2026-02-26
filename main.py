@@ -760,7 +760,7 @@ app = Flask(__name__)
 # -----------------------------
 # CONFIG
 # -----------------------------
-BG_PATH = "/Codewipeapi/certificate_bg.jpg"
+BG_PATH = "certificate_bg.jpg"
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 BASE_URL = "https://certificate.bharatwipe.online"
