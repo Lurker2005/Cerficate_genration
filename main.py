@@ -842,6 +842,7 @@ def log_verification(username, certificate_id):
 # -----------------------------
 # GET VERIFICATION COUNT
 # -----------------------------
+
 def get_verification_count(username):
 
     conn = get_db()
@@ -897,6 +898,18 @@ def get_certificate_from_db(cert_id):
 # -----------------------------
 # GENERATE CERTIFICATE
 # -----------------------------
+# -----------------------------
+# GET VERIFICATION COUNT API
+# -----------------------------
+@app.route("/verify/count/<username>", methods=["GET"])
+def count_api(username):
+
+    count = get_verification_count(username)
+
+    return jsonify({
+        "username": username,
+        "verified_count": count
+    })
 def generate_certificate(device_name,username):
 
     timestamp=datetime.now().strftime("%d-%m-%Y %H:%M:%S")
