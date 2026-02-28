@@ -763,7 +763,7 @@ app = Flask(__name__)
 BG_PATH = "certificate_bg.jpg"
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
-BASE_URL = "https://certificate.bharatwipe.online"
+BASE_URL = "http://certificate.bharatwipe.online"
 
 
 # -----------------------------
